@@ -17,8 +17,10 @@
         "typescript": "^4.3.5"
     },
     "dependencies": {
+        "@elastic/elasticsearch": "^8.15.0",
         "@google/generative-ai": "^0.21.0",
         "@rollup/plugin-node-resolve": "^15.3.0",
-        "axios": "^1.7.7"
+        "axios": "^1.7.7",
+        "gpt-tokenizer": "^2.4.0"
     }
 }
