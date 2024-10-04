@@ -5,12 +5,14 @@ interface AIPluginSettings {
   apiKey: string;
   selectedModel: string;
   maxContextLength: number; // 추가된 MAX_CONTEXT_LENGTH 설정
+  documentNum: number;
 };
 
 const DEFAULT_SETTINGS: AIPluginSettings = {
   apiKey: '',
   selectedModel: 'gemini-1.5-flash',
   maxContextLength: 4000,
+  documentNum: 5,
 };
 
 function tokenize(text: string): string[] {
@@ -94,10 +96,10 @@ async function generateAIContent(
   return null;
 }
 
-async function getRelevantDocuments(query: string, app: App): Promise<string> {
+
+async function getRelevantDocuments(query: string, app: App, documentNum: number): Promise<string> {
   try {
     const files = app.vault.getMarkdownFiles();
-
     if (files.length === 0) {
       new Notice('마크다운 파일을 찾을 수 없습니다.');
       return '';
@@ -107,7 +109,10 @@ async function getRelevantDocuments(query: string, app: App): Promise<string> {
 
     for (const file of files) {
       const content = await app.vault.cachedRead(file);
-      const terms = tokenize(content);
+      const title = file.basename; // 문서 제목
+      const titleTerms = tokenize(title); // 제목을 토크나이즈
+      const contentTerms = tokenize(content); // 내용 토크나이즈
+      const terms = [...titleTerms, ...contentTerms]; // 제목과 내용 결합
       documents.push({ file, content, terms });
     }
 
@@ -133,11 +138,17 @@ async function getRelevantDocuments(query: string, app: App): Promise<string> {
     });
 
     similarities.sort((a, b) => b.score - a.score);
+    
+    const topDocuments = similarities.slice(0, documentNum).filter((doc) => doc.score > 0);
 
-    const topDocuments = similarities.slice(0, 5).filter((doc) => doc.score > 0);
+    // topDocuments의 제목을 콘솔에 출력
+    console.log("Top Document Titles:");
+    topDocuments.forEach((doc) => {
+      console.log(doc.file.basename);
+    });
 
     const matchingContents = topDocuments.map(
-      (doc) => `## ${doc.file.basename}\n\n${doc.content}`
+      (doc) => `# Document Title: ${doc.file.path}\n\n# Document ${doc.content}`
     );
 
     const context = matchingContents.join('\n\n---\n\n');
@@ -149,6 +160,7 @@ async function getRelevantDocuments(query: string, app: App): Promise<string> {
     return '';
   }
 }
+
 
 function truncateContext(context: string, maxLength: number): string {
   if (context.length <= maxLength) {
@@ -202,7 +214,7 @@ class AIView extends ItemView {
       askButton.disabled = true;
       askButton.innerText = '답변 중...';
 
-      let context = await getRelevantDocuments(query, this.plugin.app);
+      let context = await getRelevantDocuments(query, this.plugin.app, this.plugin.settings.documentNum);
 
       context = truncateContext(context, this.plugin.settings.maxContextLength);
 
@@ -308,6 +320,21 @@ class AIPluginSettingTab extends PluginSettingTab {
             const newValue = parseInt(value, 10);
             if (!isNaN(newValue)) {
               this.plugin.settings.maxContextLength = newValue;
+              await this.plugin.saveSettings();
+            }
+          })
+      );
+    new Setting(containerEl)
+      .setName('Document Count')
+      .setDesc('제공할 문서 갯수를 설정하세요.')
+      .addText((text) =>
+        text
+          .setPlaceholder('5')
+          .setValue(this.plugin.settings.documentNum.toString())
+          .onChange(async (value) => {
+            const newValue = parseInt(value, 10);
+            if (!isNaN(newValue)) {
+              this.plugin.settings.documentNum = newValue;
               await this.plugin.saveSettings();
             }
           })

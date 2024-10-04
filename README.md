@@ -11,7 +11,7 @@ Obsidian에서 Google Generative AI(Gemini)를 사용하여 Vault 내의 데이�
 ## 설치 방법
 
 1. 이 레포지토리를 다운로드하거나 복제합니다.
-2. Obsidian의 플러그인 폴더(`.obsidian/plugins/`)에 다운로드한 플러그인 폴더를 넣습니다.
+2. Obsidian의 플러그인 폴더(`.obsidian/plugins/`)에 다운로드한 플러그인 폴더를 추가합니다.
 3. 플러그인 설정 화면에서 **Gemini-Chat via Vault** 플러그인을 활성화합니다.
 
 ## 설정
@@ -27,16 +27,5 @@ Obsidian에서 Google Generative AI(Gemini)를 사용하여 Vault 내의 데이�
 
 ## 예시
 
-- 질문: "기술 문서에 대한 요약을 제공해줘."
+- 질문: "{title} 문서에 대한 요약을 제공해줘."
 - Vault 내 문서를 바탕으로 AI가 요약을 제공합니다.
-
-## 개발
-
-이 플러그인은 TypeScript와 Rollup을 사용하여 개발되었습니다.
-
-### 빌드 및 개발
-
-1. 의존성을 설치합니다:
-
-   ```bash
-   npm install
