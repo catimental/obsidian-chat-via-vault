@@ -4,11 +4,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 interface AIPluginSettings {
   apiKey: string;
   selectedModel: string;
-}
+  maxContextLength: number; // 추가된 MAX_CONTEXT_LENGTH 설정
+};
 
 const DEFAULT_SETTINGS: AIPluginSettings = {
   apiKey: '',
   selectedModel: 'gemini-1.5-flash',
+  maxContextLength: 4000,
 };
 
 function tokenize(text: string): string[] {
@@ -69,7 +71,7 @@ async function generateAIContent(
 
     chatHistory.push({
       role: "user",
-      parts: [{ text: query }],
+      parts: [{ text: context }],
     });
 
     const chat = selectedModel.startChat({
@@ -198,12 +200,11 @@ class AIView extends ItemView {
       }
 
       askButton.disabled = true;
-      askButton.innerText = '생각 중...';
+      askButton.innerText = '답변 중...';
 
-      const MAX_CONTEXT_LENGTH = 4000;
       let context = await getRelevantDocuments(query, this.plugin.app);
 
-      context = truncateContext(context, MAX_CONTEXT_LENGTH);
+      context = truncateContext(context, this.plugin.settings.maxContextLength);
 
       const response = await generateAIContent(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory);
       responseParagraph.innerText = response || 'AI로부터 응답이 없습니다.';
@@ -296,5 +297,21 @@ class AIPluginSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+    new Setting(containerEl)
+      .setName('Max Context Length')
+      .setDesc('최대 컨텍스트 길이를 설정하세요.')
+      .addText((text) =>
+        text
+          .setPlaceholder('4000')
+          .setValue(this.plugin.settings.maxContextLength.toString())
+          .onChange(async (value) => {
+            const newValue = parseInt(value, 10);
+            if (!isNaN(newValue)) {
+              this.plugin.settings.maxContextLength = newValue;
+              await this.plugin.saveSettings();
+            }
+          })
+      );
+
   }
 }
