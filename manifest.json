@@ -1,6 +1,6 @@
 {
-	"id": "Gemini-Chat via Vault",
-	"name": "Obsidian Gemini Plugin",
+	"id": "gemini-chat-via-Vault",
+	"name": "Gemini-Chat via Vault",
 	"version": "1.0.0",
 	"minAppVersion": "0.12.0",
 	"description": "A plugin that integrates with Gemini AI.",
