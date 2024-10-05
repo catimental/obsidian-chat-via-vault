@@ -1,21 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Notice } from 'obsidian';
 
-export interface AIPluginSettings {
-  apiKey: string;
-  selectedModel: string;
-  maxContextLength: number;
-  documentNum: number;
-  conversationHeight: number;
-}
 
-export const DEFAULT_SETTINGS: AIPluginSettings = {
-  apiKey: '',
-  selectedModel: 'gemini-1.5-flash',
-  maxContextLength: 4000,
-  documentNum: 5,
-  conversationHeight: 400,
-};
 
 export async function generateAIContent(
   query: string,
@@ -52,3 +38,4 @@ export async function generateAIContent(
 
   return null;
 }
+

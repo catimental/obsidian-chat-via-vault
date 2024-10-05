@@ -1,6 +1,10 @@
-import { Plugin, PluginSettingTab, Setting, App } from 'obsidian';
+import { Plugin, Modal, Notice, TextComponent, App } from 'obsidian'
+import { AIPluginSettings, DEFAULT_SETTINGS, AIPluginSettingTab } from './settings';
+import { continueWriting } from './function'; // 분리된 함수 가져오기
 import { AIView } from './ui';
-import { AIPluginSettings, DEFAULT_SETTINGS } from './ai';
+import { generateAIContent } from './ai';
+
+
 
 export default class AIPlugin extends Plugin {
   settings: AIPluginSettings = DEFAULT_SETTINGS;
@@ -15,6 +19,33 @@ export default class AIPlugin extends Plugin {
     });
 
     this.registerView('Gemini-Chat via Vault', (leaf) => new AIView(leaf, this));
+
+
+    // "이어쓰기" 명령어 등록
+    this.addCommand({
+      id: 'continue-writing',
+      name: '이어 쓰기',
+      editorCallback: async (editor) => {
+        await continueWriting(editor, this.settings, this.chatHistory); // 함수 호출
+      }
+    });
+
+    this.addCommand({
+      id: 'create-flowchart',
+      name: '플로차트 만들기',
+      editorCallback: async (editor) => {
+        const docContent = editor.getValue(); // 현재 문서 내용 가져오기
+        new FlowchartModal(this.app, async (flowchartInput) => {
+          if (flowchartInput) {
+            const mermaidCode = await generateMermaidFlowchart(docContent, flowchartInput, this.settings, this.chatHistory);
+            editor.replaceRange(mermaidCode, editor.getCursor());
+            new Notice('플로차트가 삽입되었습니다.');
+          }
+        }).open();
+      }
+    });
+
+
   }
 
   onunload() {
@@ -37,103 +68,56 @@ export default class AIPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 }
+class FlowchartModal extends Modal {
+  onSubmit: (flowchartInput: string) => void;
 
-class AIPluginSettingTab extends PluginSettingTab {
-  plugin: AIPlugin;
-
-  constructor(app: App, plugin: AIPlugin) {
-    super(app, plugin);
-    this.plugin = plugin;
+  constructor(app: App, onSubmit: (flowchartInput: string) => void) {
+    super(app);
+    this.onSubmit = onSubmit;
   }
 
-  display(): void {
-    const { containerEl } = this;
+  onOpen() {
+    const { contentEl } = this;
 
-    containerEl.empty();
+    contentEl.createEl('h5', { text: '어떤 플로차트를 작성하고 싶으신가요?' });
 
-    containerEl.createEl('h2', { text: 'Vault Chat Plugin Settings' });
+    const inputEl = new TextComponent(contentEl);
+    inputEl.setPlaceholder('이 문서의 흐름도를 작성해줘');
 
-    new Setting(containerEl)
-      .setName('Gemini API Key')
-      .setDesc('Gemini API 키를 입력하세요.')
-      .addText((text) =>
-        text
-          .setPlaceholder('Enter API Key')
-          .setValue(this.plugin.settings.apiKey)
-          .onChange(async (value) => {
-            this.plugin.settings.apiKey = value;
-            await this.plugin.saveSettings();
-          })
-      );
+    inputEl.inputEl.style.width = '100%';
 
-    new Setting(containerEl)
-      .setName('Model')
-      .setDesc('사용할 모델을 선택하세요.')
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOptions({
-            "gemini-1.5-flash-exp-0827": "gemini-1.5-flash-exp-0827",
-            "gemini-1.5-flash": "gemini-1.5-flash-latest",
-            "gemini-1.5-pro": "gemini-1.5-pro-latest",
-          })
-          .setValue(this.plugin.settings.selectedModel)
-          .onChange(async (value) => {
-            this.plugin.settings.selectedModel = value;
-            await this.plugin.saveSettings();
-          })
-      );
+    inputEl.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.onSubmit(inputEl.getValue());
+        this.close();
+      }
+    });
+  }
 
-    new Setting(containerEl)
-      .setName('Max Context Length')
-      .setDesc('최대 컨텍스트 길이를 설정하세요.')
-      .addText((text) =>
-        text
-          .setPlaceholder('4000')
-          .setValue(this.plugin.settings.maxContextLength.toString())
-          .onChange(async (value) => {
-            const newValue = parseInt(value, 10);
-            if (!isNaN(newValue)) {
-              this.plugin.settings.maxContextLength = newValue;
-              await this.plugin.saveSettings();
-            }
-          })
-      );
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+}
 
-    new Setting(containerEl)
-      .setName('Document Count')
-      .setDesc('제공할 문서 갯수를 설정하세요.')
-      .addText((text) =>
-        text
-          .setPlaceholder('5')
-          .setValue(this.plugin.settings.documentNum.toString())
-          .onChange(async (value) => {
-            const newValue = parseInt(value, 10);
-            if (!isNaN(newValue)) {
-              this.plugin.settings.documentNum = newValue;
-              await this.plugin.saveSettings();
-            }
-          })
-      );
+// Mermaid 플로차트 코드 생성 함수
+async function generateMermaidFlowchart(docContent: string, input: string, settings: AIPluginSettings, chatHistory: Array<{ role: string; parts: Array<{ text: string }> }>): Promise<string> {
+  // AI에게 현재 문서 내용과 사용자가 입력한 플로차트 노드 전달
+  const apiKey = settings.apiKey;
+  const model = settings.selectedModel;
 
-    new Setting(containerEl)
-      .setName('Conversation Height')
-      .setDesc('대화창의 높이를 설정하세요(px).')
-      .addText((text) =>
-        text
-          .setPlaceholder('400')
-          .setValue(this.plugin.settings.conversationHeight.toString())
-          .onChange(async (value) => {
-            const newValue = parseInt(value, 10);
-            if (!isNaN(newValue)) {
-              this.plugin.settings.conversationHeight = newValue;
-              await this.plugin.saveSettings();
+  if (!apiKey) {
+    new Notice('Gemini API 키가 설정되지 않았습니다.');
+    return '';
+  }
 
-              const activeView = this.app.workspace.getLeavesOfType('Gemini-Chat via Vault').find(leaf => leaf.view instanceof AIView);
-              if (activeView && activeView.view instanceof AIView) {
-                activeView.view.updateChatContainerHeight(newValue);
-              }
-            }
-          })
-      );
+  try {
+    // generateAIContent의 query에 inputEl 값, context에 docContent 전달
+    const aiGeneratedContent = await generateAIContent("Use ```mermaid ``` to draw a flow chart that meets the following requirements:"+input, docContent, apiKey, model, chatHistory);
+    return `${aiGeneratedContent}`;
+  } catch (error) {
+    new Notice('AI로부터 응답을 받는 중 문제가 발생했습니다.');
+    return `\`\`\`mermaid\nflowchart TD\n${input}\n\`\`\``;
   }
 }
