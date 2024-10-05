@@ -1,7 +1,7 @@
 {
 	"id": "gemini-chat-via-Vault",
 	"name": "Gemini-Chat via Vault",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "0.12.0",
 	"description": "A plugin that integrates with Gemini AI.",
 	"author": "cloudier338",
