@@ -23,7 +23,7 @@ export async function generateAIContent(
       history: chatHistory,
     });
 
-    let result = await chat.sendMessage(`# rules\n- If you reference a document, be sure to provide the document's wiki link (e.g. [[path/to/document]]).\n# Info\n- \"Current Opened Document\" refers to the document that is currently open and being viewed by the user.\nUsing the documentation provided, answer the following questions in the appropriate language for questions.:` + query);
+    let result = await chat.sendMessage(`# rules\n- If you reference a document, be sure to provide the document's wiki link (e.g. [[path/to/document]]).\n# Info\n- \"Current Opened Document\" refers to the document that is currently open and being viewed by the user.\n- \"Selected Text\" refers to the text that currently selected by user\n---\nUsing the documentation provided, answer the following questions in the appropriate language for questions.:` + query);
 
     chatHistory.push({
       role: "model",

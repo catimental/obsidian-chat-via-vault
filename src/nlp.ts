@@ -152,18 +152,19 @@ export async function getRelevantDocuments(
       similarities.sort((a, b) => b.score - a.score);
       const topDocuments = similarities.slice(0, documentNum).filter((doc) => doc.score > 0);
       
+      
       // 4. 마지막으로 열었던 문서 추가
       let currentDocumentContent = '';
       if (lastOpenedFile) {
         const lastOpenedContent = await app.vault.cachedRead(lastOpenedFile);
-        currentDocumentContent = `::: Current Opened Document Path :::\n${lastOpenedFile.path}\n\n::: Current Opened Document Content :::\n${lastOpenedContent}`;
+        currentDocumentContent = `::: Current Opened Document Path :::\n${lastOpenedFile.path}\n\n::: Current Opened Document Content :::\n${lastOpenedContent}\n`;
       }
-      console.log(currentDocumentContent);
+
   
       // 5. 링크된 문서들과 관련 문서들을 모두 context로 합침
       const matchingContents = [
-        ...linkedDocuments.map(doc => `::: Document Path :::\n${doc.file.path}\n\n::: Document Content: :::\n${doc.content}`),
-        ...topDocuments.map(doc => `::: Document Path :::\n${doc.file.path}\n\n::: Document Content :::\n${doc.content}`)
+        ...linkedDocuments.map(doc => `::: Document Path :::\n${doc.file.path}\n\n::: Document Content: :::\n${doc.content}\n`),
+        ...topDocuments.map(doc => `::: Document Path :::\n${doc.file.path}\n\n::: Document Content :::\n${doc.content}\n`)
       ];
   
       // 마지막으로 열었던 문서 내용을 context 맨 앞에 추가

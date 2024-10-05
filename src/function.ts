@@ -36,3 +36,26 @@ export async function continueWriting(
     new Notice('AI 응답을 가져오는데 실패했습니다.');
   }
 }
+
+
+
+// Mermaid 플로차트 코드 생성 함수
+export async function generateMermaidFlowchart(docContent: string, input: string, settings: AIPluginSettings, chatHistory: Array<{ role: string; parts: Array<{ text: string }> }>): Promise<string> {
+    // AI에게 현재 문서 내용과 사용자가 입력한 플로차트 노드 전달
+    const apiKey = settings.apiKey;
+    const model = settings.selectedModel;
+  
+    if (!apiKey) {
+      new Notice('Gemini API 키가 설정되지 않았습니다.');
+      return '';
+    }
+  
+    try {
+      // generateAIContent의 query에 inputEl 값, context에 docContent 전달
+      const aiGeneratedContent = await generateAIContent("Use ```mermaid ``` to draw a flow chart that meets the following requirements:"+input, docContent, apiKey, model, chatHistory);
+      return `${aiGeneratedContent}`;
+    } catch (error) {
+      new Notice('AI로부터 응답을 받는 중 문제가 발생했습니다.');
+      return `\`\`\`mermaid\nflowchart TD\n${input}\n\`\`\``;
+    }
+  }

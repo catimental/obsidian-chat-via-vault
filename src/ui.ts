@@ -1,4 +1,4 @@
-import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice } from 'obsidian';
+import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent } from 'obsidian';
 import { getRelevantDocuments, truncateContext } from './nlp';
 import { generateAIContent } from './ai';
 import AIPlugin from './main';
@@ -9,7 +9,9 @@ export class AIView extends ItemView {
   plugin: AIPlugin;
   chatContainer!: HTMLElement;
   lastOpenedFile: TFile | null = null;
-  
+  selectedText: string = '';
+
+
   constructor(leaf: WorkspaceLeaf, plugin: AIPlugin) {
     super(leaf);
     this.plugin = plugin;
@@ -24,6 +26,7 @@ export class AIView extends ItemView {
   }
 
   async onload() {
+    
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
         if (leaf?.view instanceof MarkdownView) {
@@ -34,6 +37,7 @@ export class AIView extends ItemView {
         }
       })
     );
+  
 
     const container = this.containerEl.children[1];
 
@@ -116,8 +120,12 @@ export class AIView extends ItemView {
       askButton.disabled = true;
       askButton.innerText = '답변 중...';
 
+
       let context = await getRelevantDocuments(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile);
+
+      context = `::: Selected Text :::\n${this.selectedText}\n` + context;
       context = truncateContext(context, this.plugin.settings.maxContextLength);
+      console.log(context);
       const response = await generateAIContent(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory);
 
       // AI 응답을 Markdown으로 렌더링
@@ -132,7 +140,24 @@ export class AIView extends ItemView {
       this.plugin.chatHistory = [];
       new Notice('채팅 내역이 초기화 되었습니다.');
     });
+
+    document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
   }
+
+  handleSelectionChange() {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      if (selection.toString().trim().length>0){
+        this.selectedText = selection.toString().trim(); // 드래그된 텍스트를 저장
+      }
+      
+    }
+  }
+
+  getSelectedText(): string {
+    return this.selectedText; // 선택된 텍스트를 반환하는 메서드
+  }
+
 
   updateChatContainerHeight(newHeight: number) {
     this.chatContainer.style.height = `${newHeight}px`;
@@ -140,3 +165,39 @@ export class AIView extends ItemView {
 
   async onClose() {}
 }
+
+
+
+export class FlowchartModal extends Modal {
+    onSubmit: (flowchartInput: string) => void;
+  
+    constructor(app: App, onSubmit: (flowchartInput: string) => void) {
+      super(app);
+      this.onSubmit = onSubmit;
+    }
+  
+    onOpen() {
+      const { contentEl } = this;
+  
+      contentEl.createEl('h5', { text: '어떤 플로차트를 작성하고 싶으신가요?' });
+  
+      const inputEl = new TextComponent(contentEl);
+      inputEl.setPlaceholder('이 문서의 흐름도를 작성해줘');
+  
+      inputEl.inputEl.style.width = '100%';
+  
+      inputEl.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          this.onSubmit(inputEl.getValue());
+          this.close();
+        }
+      });
+    }
+  
+    onClose() {
+      const { contentEl } = this;
+      contentEl.empty();
+    }
+  }
+  
