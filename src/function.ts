@@ -24,7 +24,8 @@ export async function continueWriting(
     context, // 문맥을 AI에게 전달
     apiKey,
     model,
-    chatHistory
+    chatHistory,
+    ""
   );
   console.log(generatedText)
 
@@ -52,7 +53,7 @@ export async function generateMermaidFlowchart(docContent: string, input: string
   
     try {
       // generateAIContent의 query에 inputEl 값, context에 docContent 전달
-      const aiGeneratedContent = await generateAIContent("Use ```mermaid ``` to draw a flow chart that meets the following requirements:"+input, docContent, apiKey, model, chatHistory);
+      const aiGeneratedContent = await generateAIContent("Use ```mermaid ``` to draw a flow chart that meets the following requirements:"+input, docContent, apiKey, model, chatHistory,"");
       return `${aiGeneratedContent}`;
     } catch (error) {
       new Notice('AI로부터 응답을 받는 중 문제가 발생했습니다.');

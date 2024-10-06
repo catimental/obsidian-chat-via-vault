@@ -57,6 +57,7 @@ export default class AIPlugin extends Plugin {
   onunload() {
     this.app.workspace.detachLeavesOfType('Chat via Vault');
   }
+  
 
   async activateView() {
     this.app.workspace.detachLeavesOfType('Chat via Vault');

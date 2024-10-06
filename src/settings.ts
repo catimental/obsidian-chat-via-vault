@@ -9,6 +9,8 @@ export interface AIPluginSettings {
   documentNum: number;
   conversationHeight: number;
   searchalgorithm: string;
+  chunkEnabled: boolean;
+  chunkNum: number;
   lightFontColor: string;  // 라이트 테마 글자 색
   lightBackgroundColor: string;  // 라이트 테마 배경 색
   darkFontColor: string;  // 다크 테마 글자 색
@@ -24,6 +26,8 @@ export const DEFAULT_SETTINGS: AIPluginSettings = {
   documentNum: 5,
   conversationHeight: 400,
   searchalgorithm: "BM25",
+  chunkEnabled: false,
+  chunkNum: 5,
   lightFontColor: '#000000',  // 라이트 테마 글자 색 (검정)
   lightBackgroundColor: '#FFFFFF',  // 라이트 테마 배경 색 (하양)
   darkFontColor: '#FFFFFF',  // 다크 테마 글자 색 (하양)
@@ -141,6 +145,32 @@ export class AIPluginSettingTab extends PluginSettingTab {
             this.plugin.settings.searchalgorithm = value as 'BM25' | 'TF-IDF';  // 타입 캐스팅 적용
             await this.plugin.saveSettings();
         })
+      );
+
+      new Setting(containerEl)
+            .setName('Enable Chunk')
+            .setDesc('청크 단위 검색을 사용합니다. (문서 검색 시간이 2배 가량 소요됩니다.)')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.chunkEnabled)
+                .onChange(async (value) => {
+                    this.plugin.settings.chunkEnabled = value;
+                    await this.plugin.saveSettings();
+                }));
+      
+      new Setting(containerEl)
+      .setName('')
+      .setDesc('문서 정렬에 사용할 청크 수를 설정하세요.')
+      .addText((text) =>
+        text
+          .setPlaceholder('5')
+          .setValue(this.plugin.settings.chunkNum.toString())
+          .onChange(async (value) => {
+            const newValue = parseInt(value, 10);
+            if (!isNaN(newValue)) {
+              this.plugin.settings.chunkNum = newValue;
+              await this.plugin.saveSettings();
+            }
+          })
       );
       // 라이트 테마 글자 색 설정
     new Setting(containerEl)

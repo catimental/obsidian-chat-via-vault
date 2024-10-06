@@ -1,9 +1,9 @@
 import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent, TextAreaComponent } from 'obsidian';
-import { getRelevantDocuments, truncateContext } from './nlp';
+import { getRelevantDocuments, getRelevantDocumentsByTopChunks, truncateContext } from './nlp';
 import { generateAIContent, generateAIContentStream } from './ai';
 import AIPlugin from './main';
 
-const AI_VIEW_TYPE = 'chat-via-vault';
+const AI_VIEW_TYPE = 'Chat via Vault';
 
 export class AIView extends ItemView {
   plugin: AIPlugin;
@@ -18,7 +18,7 @@ export class AIView extends ItemView {
   }
 
   getViewType() {
-    return "chat-via-vault";
+    return AI_VIEW_TYPE;
   }
 
   getDisplayText() {
@@ -39,7 +39,7 @@ export class AIView extends ItemView {
 
     const container = this.containerEl.children[1];
 
-    const title = container.createEl('h2', { text: 'chat-via-vault' });
+    const title = container.createEl('h2', { text: 'Chat via Vault' });
     title.addClass('ai-chat-title');
 
     this.chatContainer = container.createEl('div');
@@ -104,12 +104,6 @@ export class AIView extends ItemView {
           new Notice('질문을 입력해주세요.');
           return;
       }
-
-      refreshButton.addEventListener('click', () => {
-        this.chatContainer.empty();
-        this.plugin.chatHistory = [];
-        new Notice('채팅 내역이 초기화 되었습니다.');
-      });
   
       // 유저 메시지를 추가
       this.messages.push({ role: 'user', message: query });
@@ -121,10 +115,16 @@ export class AIView extends ItemView {
       const aiMessageElement = addMessageToChat("문서 검색 중...", 'model');
   
       askButton.disabled = true;
-  
-      let context = await getRelevantDocuments(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile, this.plugin.settings.searchalgorithm);
+      let context = "";
+      if (this.plugin.settings.chunkEnabled==false) {
+        context = await getRelevantDocuments(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile, this.plugin.settings.searchalgorithm);
+      } else {
+        context = await getRelevantDocumentsByTopChunks(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile, this.plugin.settings.chunkNum, this.plugin.settings.searchalgorithm);
+
+      }
+      console.log(context);
+
       context = `::: Selected Text :::\n${this.selectedText}\n` + context;
-      console.log(context)
       context = truncateContext(context, this.plugin.settings.maxContextLength);
   
       // AI 응답을 실시간 스트리밍으로 받기
@@ -150,6 +150,11 @@ export class AIView extends ItemView {
 
 
   })
+  refreshButton.addEventListener('click', () => {
+    this.chatContainer.empty();
+    this.plugin.chatHistory = [];
+    new Notice('채팅 내역이 초기화 되었습니다.');
+  });
   document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
   
 };
@@ -171,7 +176,6 @@ updateStyles() {
     const selection = window.getSelection();
     if (selection!.toString().trim().length>0){
       this.selectedText = selection!.toString().trim(); // 드래그된 텍스트를 저장
-      console.log(this.selectedText)
     }
       
   }
@@ -223,7 +227,7 @@ export class FlowchartModal extends Modal {
     }
   }
   
-
+  
 
   export class PromptModal extends Modal {
     onSubmit: (prompt: string) => void;
@@ -234,6 +238,7 @@ export class FlowchartModal extends Modal {
       this.onSubmit = onSubmit;
       this.prompt = prompt;
     }
+    
   
     onOpen() {
       const { contentEl } = this;
