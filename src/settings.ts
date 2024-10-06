@@ -122,7 +122,7 @@ export class AIPluginSettingTab extends PluginSettingTab {
               this.plugin.settings.conversationHeight = newValue;
               await this.plugin.saveSettings();
 
-              const activeView = this.app.workspace.getLeavesOfType('Gemini-Chat via Vault').find(leaf => leaf.view instanceof AIView);
+              const activeView = this.app.workspace.getLeavesOfType('Vault Chat').find(leaf => leaf.view instanceof AIView);
               if (activeView && activeView.view instanceof AIView) {
                 activeView.view.updateChatContainerHeight(newValue);
               }
@@ -264,7 +264,7 @@ export class AIPluginSettingTab extends PluginSettingTab {
       modal.open();
     }
   updateAIViewStyles() {
-    const activeView = this.app.workspace.getLeavesOfType('Gemini-Chat via Vault').find(leaf => leaf.view instanceof AIView);
+    const activeView = this.app.workspace.getLeavesOfType('Vault Chat').find(leaf => leaf.view instanceof AIView);
     if (activeView && activeView.view instanceof AIView) {
       activeView.view.applyStyles();  // 현재 테마에 맞게 스타일을 업데이트
     }

@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Notice, App, TFile } from 'obsidian';
 import { encode } from 'gpt-tokenizer';
 
