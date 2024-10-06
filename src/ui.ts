@@ -1,4 +1,4 @@
-import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent } from 'obsidian';
+import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent, TextAreaComponent } from 'obsidian';
 import { getRelevantDocuments, truncateContext } from './nlp';
 import { generateAIContent, generateAIContentStream } from './ai';
 import AIPlugin from './main';
@@ -240,15 +240,22 @@ export class FlowchartModal extends Modal {
   
       contentEl.createEl('h2', { text: 'Add/Edit Prompt' });
   
-      const inputEl = new TextComponent(contentEl);
+      const inputEl = new TextAreaComponent(contentEl);
       inputEl.setValue(this.prompt);  // 기존 프롬프트가 있을 경우 미리 입력
   
       inputEl.inputEl.style.width = '100%';
   
       inputEl.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
-        if (event.key === 'Enter') {
+        if (event.key === 'Enter' && event.shiftKey) {
+          // Shift + Enter일 경우 줄바꿈을 추가
+          const { selectionStart, selectionEnd, value } = inputEl.inputEl;
+          inputEl.inputEl.value = value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd);
+          inputEl.inputEl.selectionStart = inputEl.inputEl.selectionEnd = selectionStart + 1;
+          event.preventDefault();  // 기본 Enter 동작을 막음 (폼 제출 등)
+        } else if (event.key === 'Enter') {
+          // Enter만 누를 경우 프롬프트 제출
           event.preventDefault();
-          this.onSubmit(inputEl.getValue());  // 프롬프트 제출
+          this.onSubmit(inputEl.getValue());
           this.close();
         }
       });

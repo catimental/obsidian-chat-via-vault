@@ -197,72 +197,80 @@ export class AIPluginSettingTab extends PluginSettingTab {
             this.updateAIViewStyles();  // 설정 변경 후 즉시 적용
           })
       );
-      containerEl.createEl('h3', { text: 'Manage Prompts' });
+      // 프롬프트 관리 섹션 추가
+    containerEl.createEl('h3', { text: 'Manage Prompts' });
 
-      // 프롬프트 목록을 보여줌
-      this.plugin.settings.prompts.forEach((prompt, index) => {
-        const setting = new Setting(containerEl)
-          .setName(`Prompt ${index + 1}`)
-          .setDesc(prompt)
-          .addExtraButton((btn) => {
-            btn.setIcon("pencil").setTooltip("Edit").onClick(() => {
-              this.editPrompt(prompt, index);
-            });
-          })
-          .addExtraButton((btn) => {
-            btn.setIcon("trash").setTooltip("Delete").onClick(async () => {
-              this.plugin.settings.prompts.splice(index, 1);  // 프롬프트 삭제
-              await this.plugin.saveSettings();
-              this.display();  // 설정 UI 다시 로드
-            });
-          });
-  
-        // 라디오 버튼을 생성하여 선택 가능하게 함
-        const radioContainer = document.createElement('div');
-        const radioInput = document.createElement('input');
-        radioInput.type = 'radio';
-        radioInput.name = 'promptRadio';
-        radioInput.value = prompt;
-        radioInput.checked = prompt === this.plugin.settings.selectedPrompt;
-  
-        radioInput.addEventListener('change', async () => {
-          this.plugin.settings.selectedPrompt = prompt;  // 선택된 프롬프트 설정
-          await this.plugin.saveSettings();
+    // 프롬프트 목록을 보여줌
+    this.plugin.settings.prompts.forEach((prompt, index) => {
+      const setting = new Setting(containerEl)
+        .setName(`Prompt ${index + 1}`);
+
+      // 줄바꿈을 포함한 설명을 표시하는 HTML 요소 생성
+      const descEl = document.createElement('div');
+      descEl.style.whiteSpace = 'pre-wrap';  // 줄바꿈을 유지하기 위한 스타일
+      descEl.textContent = prompt;
+      setting.descEl.appendChild(descEl);  // 설명 요소에 추가
+
+      // 편집 및 삭제 버튼
+      setting.addExtraButton((btn) => {
+        btn.setIcon("pencil").setTooltip("Edit").onClick(() => {
+          this.editPrompt(prompt, index);
         });
-  
-        radioContainer.appendChild(radioInput);
-        setting.controlEl.appendChild(radioContainer);  // 라디오 버튼을 설정 UI에 추가
+      }).addExtraButton((btn) => {
+        btn.setIcon("trash").setTooltip("Delete").onClick(async () => {
+          this.plugin.settings.prompts.splice(index, 1);  // 프롬프트 삭제
+          await this.plugin.saveSettings();
+          this.display();  // 설정 UI 다시 로드
+        });
       });
-  
-      // 새로운 프롬프트 추가 버튼
-      new Setting(containerEl)
-        .setName('')
-        .addButton((btn) =>
-          btn.setButtonText('Add Prompt').onClick(() => {
-            this.addNewPrompt();
-          })
-        );
-    }
-  
-    // 새로운 프롬프트 추가 메서드
-    addNewPrompt() {
-      const modal = new PromptModal(this.app, async (newPrompt: string) => {
-        this.plugin.settings.prompts.push(newPrompt);  // 새로운 프롬프트 추가
+
+      // 라디오 버튼을 생성하여 선택 가능하게 함
+      const radioContainer = document.createElement('div');
+      const radioInput = document.createElement('input');
+      radioInput.type = 'radio';
+      radioInput.name = 'promptRadio';
+      radioInput.value = prompt;
+      radioInput.checked = prompt === this.plugin.settings.selectedPrompt;
+
+      radioInput.addEventListener('change', async () => {
+        this.plugin.settings.selectedPrompt = prompt;  // 선택된 프롬프트 설정
         await this.plugin.saveSettings();
-        this.display();  // 설정 UI 다시 로드
       });
-      modal.open();
-    }
-  
-    // 프롬프트 수정 메서드
-    editPrompt(prompt: string, index: number) {
-      const modal = new PromptModal(this.app, async (updatedPrompt: string) => {
-        this.plugin.settings.prompts[index] = updatedPrompt;  // 프롬프트 업데이트
-        await this.plugin.saveSettings();
-        this.display();  // 설정 UI 다시 로드
-      }, prompt);
-      modal.open();
-    }
+
+      radioContainer.appendChild(radioInput);
+      setting.controlEl.appendChild(radioContainer);  // 라디오 버튼을 설정 UI에 추가
+    });
+
+    // 새로운 프롬프트 추가 버튼
+    new Setting(containerEl)
+      .setName('Add New Prompt')
+      .addButton((btn) =>
+        btn.setButtonText('Add Prompt').onClick(() => {
+          this.addNewPrompt();
+        })
+      );
+  }
+
+  // 새로운 프롬프트 추가 메서드
+  addNewPrompt() {
+    const modal = new PromptModal(this.app, async (newPrompt: string) => {
+      this.plugin.settings.prompts.push(newPrompt);  // 새로운 프롬프트 추가
+      await this.plugin.saveSettings();
+      this.display();  // 설정 UI 다시 로드
+    });
+    modal.open();
+  }
+
+  // 프롬프트 수정 메서드
+  editPrompt(prompt: string, index: number) {
+    const modal = new PromptModal(this.app, async (updatedPrompt: string) => {
+      this.plugin.settings.prompts[index] = updatedPrompt;  // 프롬프트 업데이트
+      await this.plugin.saveSettings();
+      this.display();  // 설정 UI 다시 로드
+    }, prompt);
+    modal.open();
+  }
+
   updateAIViewStyles() {
     const activeView = this.app.workspace.getLeavesOfType('Vault Chat').find(leaf => leaf.view instanceof AIView);
     if (activeView && activeView.view instanceof AIView) {
