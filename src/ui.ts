@@ -22,7 +22,7 @@ export class AIView extends ItemView {
   }
 
   getDisplayText() {
-    return "chat-via-vault";
+    return "Chat via Vault";
   }
 
   async onload() {
