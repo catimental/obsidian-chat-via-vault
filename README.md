@@ -1,4 +1,4 @@
-# Vault Chat 플러그인
+# Chat via Vault 플러그인
 
 Obsidian에서 Google Generative AI(Gemini)를 사용하여 Vault 내의 데이터를 기반으로 AI와 소통할 수 있도록 도와주는 플러그인입니다. 이 플러그인을 통해 Vault의 콘텐츠를 활용한 AI 채팅이 가능하며, Obsidian의 문서와 연계된 다양한 질문에 대한 답변을 얻을 수 있습니다.
 
