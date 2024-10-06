@@ -3,7 +3,7 @@ import { getRelevantDocuments, truncateContext } from './nlp';
 import { generateAIContent, generateAIContentStream } from './ai';
 import AIPlugin from './main';
 
-const AI_VIEW_TYPE = 'Gemini-Chat via Vault';
+const AI_VIEW_TYPE = 'Vault Chat';
 
 export class AIView extends ItemView {
   plugin: AIPlugin;
@@ -18,7 +18,7 @@ export class AIView extends ItemView {
   }
 
   getViewType() {
-    return "Gemini-Chat via Vault";
+    return "Vault Chat";
   }
 
   getDisplayText() {
