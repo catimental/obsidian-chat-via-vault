@@ -1,5 +1,5 @@
 {
-    "name": "vault-chat",
+    "name": "chat-via-vault",
     "version": "1.0.3",
     "description": "Chat with AI using Obsidian Vault data.",
     "main": "main.js",

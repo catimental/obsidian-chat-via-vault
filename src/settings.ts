@@ -45,7 +45,7 @@ export class AIPluginSettingTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
-    containerEl.createEl('h2', { text: 'Vault Chat Plugin Settings' });
+    containerEl.createEl('h2', { text: 'Chat via Vault Plugin Settings' });
 
     new Setting(containerEl)
       .setName('Gemini API Key')
@@ -122,7 +122,7 @@ export class AIPluginSettingTab extends PluginSettingTab {
               this.plugin.settings.conversationHeight = newValue;
               await this.plugin.saveSettings();
 
-              const activeView = this.app.workspace.getLeavesOfType('Vault Chat').find(leaf => leaf.view instanceof AIView);
+              const activeView = this.app.workspace.getLeavesOfType('Chat via Vault').find(leaf => leaf.view instanceof AIView);
               if (activeView && activeView.view instanceof AIView) {
                 activeView.view.updateChatContainerHeight(newValue);
               }
@@ -272,7 +272,7 @@ export class AIPluginSettingTab extends PluginSettingTab {
   }
 
   updateAIViewStyles() {
-    const activeView = this.app.workspace.getLeavesOfType('Vault Chat').find(leaf => leaf.view instanceof AIView);
+    const activeView = this.app.workspace.getLeavesOfType('Chat via Vault').find(leaf => leaf.view instanceof AIView);
     if (activeView && activeView.view instanceof AIView) {
       activeView.view.applyStyles();  // 현재 테마에 맞게 스타일을 업데이트
     }

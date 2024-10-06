@@ -3,7 +3,7 @@ import { getRelevantDocuments, truncateContext } from './nlp';
 import { generateAIContent, generateAIContentStream } from './ai';
 import AIPlugin from './main';
 
-const AI_VIEW_TYPE = 'Vault Chat';
+const AI_VIEW_TYPE = 'chat-via-vault';
 
 export class AIView extends ItemView {
   plugin: AIPlugin;
@@ -18,11 +18,11 @@ export class AIView extends ItemView {
   }
 
   getViewType() {
-    return "Vault Chat";
+    return "chat-via-vault";
   }
 
   getDisplayText() {
-    return "Vault Chat";
+    return "chat-via-vault";
   }
 
   async onload() {
@@ -39,7 +39,7 @@ export class AIView extends ItemView {
 
     const container = this.containerEl.children[1];
 
-    const title = container.createEl('h2', { text: 'Vault Chat' });
+    const title = container.createEl('h2', { text: 'chat-via-vault' });
     title.addClass('ai-chat-title');
 
     this.chatContainer = container.createEl('div');

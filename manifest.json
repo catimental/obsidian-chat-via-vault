@@ -1,6 +1,6 @@
 {
-	"id": "vault-chat",
-	"name": "Vault Chat",
+	"id": "chat-via-vault",
+	"name": "Chat via Vault",
 	"version": "1.0.3",
 	"minAppVersion": "0.12.0",
 	"description": "A plugin that integrates with AI.",

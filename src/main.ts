@@ -13,11 +13,11 @@ export default class AIPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     this.addSettingTab(new AIPluginSettingTab(this.app, this));
 
-    this.addRibbonIcon('bot', 'Vault Chat', () => {
+    this.addRibbonIcon('bot', 'Chat via Vault', () => {
       this.activateView();
     });
 
-    this.registerView('Vault Chat', (leaf) => new AIView(leaf, this));
+    this.registerView('Chat via Vault', (leaf) => new AIView(leaf, this));
 
 
     // "이어쓰기" 명령어 등록
@@ -44,7 +44,7 @@ export default class AIPlugin extends Plugin {
       }
     });
     this.registerEvent(this.app.workspace.on('css-change', () => {
-      const activeView = this.app.workspace.getLeavesOfType('Vault Chat').find(leaf => leaf.view instanceof AIView);
+      const activeView = this.app.workspace.getLeavesOfType('Chat via Vault').find(leaf => leaf.view instanceof AIView);
       if (activeView && activeView.view instanceof AIView) {
         activeView.view.applyStyles();  // 테마 변경에 따라 스타일 업데이트
       }
@@ -55,15 +55,15 @@ export default class AIPlugin extends Plugin {
 
 
   onunload() {
-    this.app.workspace.detachLeavesOfType('Vault Chat');
+    this.app.workspace.detachLeavesOfType('Chat via Vault');
   }
 
   async activateView() {
-    this.app.workspace.detachLeavesOfType('Vault Chat');
+    this.app.workspace.detachLeavesOfType('Chat via Vault');
 
     const leaf = this.app.workspace.getRightLeaf(false);
     await leaf!.setViewState({
-      type: 'Vault Chat',
+      type: 'Chat via Vault',
       active: true,
     });
 
