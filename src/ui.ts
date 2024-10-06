@@ -122,7 +122,6 @@ export class AIView extends ItemView {
         context = await getRelevantDocumentsByTopChunks(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile, this.plugin.settings.chunkNum, this.plugin.settings.searchalgorithm);
 
       }
-      console.log(context);
 
       context = `::: Selected Text :::\n${this.selectedText}\n` + context;
       context = truncateContext(context, this.plugin.settings.maxContextLength);
