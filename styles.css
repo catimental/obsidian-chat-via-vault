@@ -15,6 +15,11 @@
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
+  user-select: text;
+}
+
+.user-message, .model-message {
+  user-select: text;
 }
 
 .user-message {

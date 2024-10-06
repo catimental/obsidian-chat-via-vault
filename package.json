@@ -1,7 +1,7 @@
 {
-    "name": "gemini-chat-via-vault",
-    "version": "1.0.0",
-    "description": "Chat with Gemini AI using Obsidian Vault data.",
+    "name": "vault-chat",
+    "version": "1.0.3",
+    "description": "Chat with AI using Obsidian Vault data.",
     "main": "main.js",
     "scripts": {
         "build": "rollup -c",

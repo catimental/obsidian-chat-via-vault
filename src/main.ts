@@ -43,6 +43,12 @@ export default class AIPlugin extends Plugin {
         }).open();
       }
     });
+    this.registerEvent(this.app.workspace.on('css-change', () => {
+      const activeView = this.app.workspace.getLeavesOfType('Gemini-Chat via Vault').find(leaf => leaf.view instanceof AIView);
+      if (activeView && activeView.view instanceof AIView) {
+        activeView.view.applyStyles();  // 테마 변경에 따라 스타일 업데이트
+      }
+    }));
 
 
   }

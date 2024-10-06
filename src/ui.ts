@@ -1,6 +1,6 @@
 import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent } from 'obsidian';
 import { getRelevantDocuments, truncateContext } from './nlp';
-import { generateAIContent } from './ai';
+import { generateAIContent, generateAIContentStream } from './ai';
 import AIPlugin from './main';
 
 const AI_VIEW_TYPE = 'Gemini-Chat via Vault';
@@ -10,7 +10,7 @@ export class AIView extends ItemView {
   chatContainer!: HTMLElement;
   lastOpenedFile: TFile | null = null;
   selectedText: string = '';
-
+  messages: Array<{ role: 'user' | 'model', message: string, images?: string[] }> = [];
 
   constructor(leaf: WorkspaceLeaf, plugin: AIPlugin) {
     super(leaf);
@@ -18,15 +18,14 @@ export class AIView extends ItemView {
   }
 
   getViewType() {
-    return AI_VIEW_TYPE;
+    return "Gemini-Chat via Vault";
   }
 
   getDisplayText() {
-    return "Gemini AI Chat";
+    return "Vault Chat";
   }
 
   async onload() {
-    
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
         if (leaf?.view instanceof MarkdownView) {
@@ -37,52 +36,44 @@ export class AIView extends ItemView {
         }
       })
     );
-  
 
     const container = this.containerEl.children[1];
 
-    const title = container.createEl('h2', { text: 'Gemini AI Chat' });
+    const title = container.createEl('h2', { text: 'Vault Chat' });
     title.addClass('ai-chat-title');
 
     this.chatContainer = container.createEl('div');
     this.chatContainer.addClass('ai-chat-container');
     this.chatContainer.style.setProperty('--conversation-height', `${this.plugin.settings.conversationHeight}px`);
 
-    const addMessageToChat = async (message: string, role: 'user' | 'ai') => {
+    this.chatContainer.style.userSelect = 'text';
+
+    this.applyStyles();
+
+
+    const addMessageToChat = (message: string, role: 'user' | 'model', images?: string[] | null) => {
       const messageEl = this.chatContainer.createEl('div');
-      messageEl.addClass(role === 'user' ? 'user-message' : 'ai-message');
+      messageEl.addClass(role === 'user' ? 'user-message' : 'model-message');
+      messageEl.style.userSelect = 'text';
 
+  
       const mdContent = document.createElement('div');
-
-      // Markdown 및 Mermaid 렌더링 처리
-      if (message.startsWith('```mermaid')) {
-        // Mermaid 구문을 직접 렌더링
-        await MarkdownRenderer.renderMarkdown(message, mdContent, '', this.plugin);
-      } else {
-        // 일반적인 Markdown 처리
-        await MarkdownRenderer.renderMarkdown(message, mdContent, '', this.plugin);
-      }
-
+      mdContent.textContent = message;  // 텍스트를 직접 추가하여 확인
       messageEl.appendChild(mdContent);
-
-      // 내부 링크 처리
-      const internalLinks = mdContent.querySelectorAll('a.internal-link');
-      internalLinks.forEach((linkEl) => {
-        linkEl.addEventListener('click', (event) => {
-          event.preventDefault();
-          const linkText = linkEl.getAttribute('href');
-          if (linkText) {
-            const file = this.plugin.app.metadataCache.getFirstLinkpathDest(linkText, "");
-            if (file) {
-              this.plugin.app.workspace.getLeaf(true).openFile(file);
-            } else {
-              new Notice(`파일을 찾을 수 없습니다: ${linkText}`);
-            }
-          }
-        });
-      });
-
+  
+      this.chatContainer.appendChild(messageEl);
       this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+  
+      return mdContent;
+  };
+
+
+
+  
+
+    const updateMessageContent = async (mdContent: HTMLElement, message: string) => {
+      mdContent.empty();
+      await MarkdownRenderer.renderMarkdown(message, mdContent, this.lastOpenedFile?.path || '', this);
     };
 
     const inputContainer = container.createEl('div');
@@ -106,52 +97,83 @@ export class AIView extends ItemView {
       }
     });
 
+
     askButton.addEventListener('click', async () => {
       const query = inputField.value.trim();
       if (!query) {
-        new Notice('질문을 입력해주세요.');
-        return;
+          new Notice('질문을 입력해주세요.');
+          return;
       }
 
-      // 사용자 입력을 Markdown으로 렌더링
-      await addMessageToChat(query, 'user');
+      refreshButton.addEventListener('click', () => {
+        this.chatContainer.empty();
+        this.plugin.chatHistory = [];
+        new Notice('채팅 내역이 초기화 되었습니다.');
+      });
+  
+      // 유저 메시지를 추가
+      this.messages.push({ role: 'user', message: query });
+      const userMessageElement = addMessageToChat(query, 'user');
       inputField.value = '';
-
+  
+      // "답변 중..." 메시지 추가
+      this.messages.push({ role: 'model', message: "문서 검색 중..." });
+      const aiMessageElement = addMessageToChat("문서 검색 중...", 'model');
+  
       askButton.disabled = true;
-      askButton.innerText = '답변 중...';
-
-
-      let context = await getRelevantDocuments(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile);
-
+  
+      let context = await getRelevantDocuments(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile, this.plugin.settings.searchalgorithm);
       context = `::: Selected Text :::\n${this.selectedText}\n` + context;
+      console.log(context)
       context = truncateContext(context, this.plugin.settings.maxContextLength);
-      console.log(context);
-      const response = await generateAIContent(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory);
-
-      // AI 응답을 Markdown으로 렌더링
-      await addMessageToChat(response || 'AI로부터 응답이 없습니다.', 'ai');
-
+  
+      // AI 응답을 실시간 스트리밍으로 받기
+      await generateAIContentStream(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt, (chunkText) => {
+          // "답변 중..."을 AI의 응답으로 교체
+          const lastMessageIndex = this.messages.length - 1;
+          if (this.messages[lastMessageIndex].message === "문서 검색 중...") {
+              this.messages[lastMessageIndex].message = ""; // "답변 중..."을 빈 문자열로 교체
+          }
+          this.messages[lastMessageIndex].message += chunkText;
+          
+          // UI 업데이트
+          updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
+          this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+      });
+  
+      this.plugin.chatHistory.push({ role: 'user', parts: [{ text: query }] });
+      this.plugin.chatHistory.push({ role: 'model', parts: [{ text: this.messages[this.messages.length - 1].message }] });
+  
       askButton.disabled = false;
       askButton.innerText = 'Ask';
-    });
+      
 
-    refreshButton.addEventListener('click', () => {
-      this.chatContainer.empty();
-      this.plugin.chatHistory = [];
-      new Notice('채팅 내역이 초기화 되었습니다.');
-    });
 
-    document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
-  }
+  })
+  document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
+  
+};
+applyStyles() {
+  const isDarkTheme = document.body.classList.contains('theme-dark');
+  const fontColor = isDarkTheme ? this.plugin.settings.darkFontColor : this.plugin.settings.lightFontColor;
+  const backgroundColor = isDarkTheme ? this.plugin.settings.darkBackgroundColor : this.plugin.settings.lightBackgroundColor;
+
+  this.chatContainer.style.color = fontColor;
+  this.chatContainer.style.backgroundColor = backgroundColor;
+}
+
+// 설정 변경 시 스타일 업데이트하는 메서드 추가
+updateStyles() {
+  this.applyStyles();  // 테마에 맞게 스타일 재적용
+}
 
   handleSelectionChange() {
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      if (selection.toString().trim().length>0){
-        this.selectedText = selection.toString().trim(); // 드래그된 텍스트를 저장
-      }
-      
+    if (selection!.toString().trim().length>0){
+      this.selectedText = selection!.toString().trim(); // 드래그된 텍스트를 저장
+      console.log(this.selectedText)
     }
+      
   }
 
   getSelectedText(): string {
@@ -193,6 +215,45 @@ export class FlowchartModal extends Modal {
           this.close();
         }
       });
+    }
+  
+    onClose() {
+      const { contentEl } = this;
+      contentEl.empty();
+    }
+  }
+  
+
+
+  export class PromptModal extends Modal {
+    onSubmit: (prompt: string) => void;
+    prompt: string;
+  
+    constructor(app: App, onSubmit: (prompt: string) => void, prompt: string = '') {
+      super(app);
+      this.onSubmit = onSubmit;
+      this.prompt = prompt;
+    }
+  
+    onOpen() {
+      const { contentEl } = this;
+  
+      contentEl.createEl('h2', { text: 'Add/Edit Prompt' });
+  
+      const inputEl = new TextComponent(contentEl);
+      inputEl.setValue(this.prompt);  // 기존 프롬프트가 있을 경우 미리 입력
+  
+      inputEl.inputEl.style.width = '100%';
+  
+      inputEl.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          this.onSubmit(inputEl.getValue());  // 프롬프트 제출
+          this.close();
+        }
+      });
+  
+      inputEl.inputEl.focus();
     }
   
     onClose() {
