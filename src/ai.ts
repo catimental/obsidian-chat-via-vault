@@ -61,7 +61,6 @@ export async function generateAIContentStream(
   selectedPrompt: string,
   onChunk: (chunkText: string) => void
 ): Promise<void> {
-  try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const selectedModel = genAI.getGenerativeModel({ model });
 
@@ -94,8 +93,4 @@ export async function generateAIContentStream(
       role: "model",
       parts: [{ text: (await result.response).text() }],
     });
-  } catch (error) {
-    console.error('Gemini API 요청 중 오류가 발생했습니다:', error);
-    new Notice('AI 응답을 가져오는 중 오류가 발생했습니다.');
-  }
 }
