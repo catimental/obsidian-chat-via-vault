@@ -11,6 +11,7 @@
     "license": "MIT",
     "type": "module",
     "devDependencies": {
+        "diff": "^7.0.0",
         "obsidian": "latest",
         "rollup": "^2.56.3",
         "rollup-plugin-typescript2": "^0.31.2",

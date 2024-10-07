@@ -71,3 +71,17 @@
   background-color: #cccccc;
   cursor: not-allowed;
 }
+
+.diff-container {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.diff-added {
+  background-color: #e6ffed;
+}
+
+.diff-removed {
+  background-color: #ffeef0;
+}

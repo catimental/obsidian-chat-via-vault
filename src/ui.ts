@@ -1,7 +1,8 @@
-import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent, TextAreaComponent } from 'obsidian';
+import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent, TextAreaComponent, FuzzySuggestModal } from 'obsidian';
 import { getRelevantDocuments, getRelevantDocumentsByTopChunks, truncateContext } from './nlp';
 import { generateAIContent, generateAIContentStream } from './ai';
 import AIPlugin from './main';
+import * as diff from 'diff';
 
 const AI_VIEW_TYPE = 'Chat via Vault';
 
@@ -74,6 +75,21 @@ export class AIView extends ItemView {
     const updateMessageContent = async (mdContent: HTMLElement, message: string) => {
       mdContent.empty();
       await MarkdownRenderer.renderMarkdown(message, mdContent, this.lastOpenedFile?.path || '', this);
+      const internalLinks = mdContent.querySelectorAll('a.internal-link');
+      internalLinks.forEach((linkEl) => {
+        linkEl.addEventListener('click', (event) => {
+          event.preventDefault();
+          const linkText = linkEl.getAttribute('href');
+          if (linkText) {
+            const file = this.plugin.app.metadataCache.getFirstLinkpathDest(linkText, "");
+            if (file) {
+              this.plugin.app.workspace.getLeaf(true).openFile(file);
+            } else {
+              new Notice(`파일을 찾을 수 없습니다: ${linkText}`);
+            }
+          }
+        });
+      });
     };
 
     const inputContainer = container.createEl('div');
@@ -127,18 +143,25 @@ export class AIView extends ItemView {
       context = truncateContext(context, this.plugin.settings.maxContextLength);
   
       // AI 응답을 실시간 스트리밍으로 받기
-      await generateAIContentStream(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt, (chunkText) => {
-          // "답변 중..."을 AI의 응답으로 교체
-          const lastMessageIndex = this.messages.length - 1;
-          if (this.messages[lastMessageIndex].message === "문서 검색 중...") {
-              this.messages[lastMessageIndex].message = ""; // "답변 중..."을 빈 문자열로 교체
-          }
-          this.messages[lastMessageIndex].message += chunkText;
-          
-          // UI 업데이트
-          updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
-          this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
-      });
+      if (this.plugin.settings.generationStreaming==true) {
+        await generateAIContentStream(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt, (chunkText) => {
+            const lastMessageIndex = this.messages.length - 1;
+            if (this.messages[lastMessageIndex].message === "문서 검색 중...") {
+                this.messages[lastMessageIndex].message = ""; // "답변 중..."을 빈 문자열로 교체
+            }
+            this.messages[lastMessageIndex].message += chunkText;
+            
+            // UI 업데이트
+            updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
+        });
+      } else if (this.plugin.settings.generationStreaming==false){
+        const lastMessageIndex = this.messages.length - 1;
+        this.messages[lastMessageIndex].message = "답변 중..."; // "답변 중..."을 빈 문자열로 교체
+        const response = await generateAIContent(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt,);
+        this.messages[lastMessageIndex].message = response!;
+        updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
+      }
+      this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
   
       this.plugin.chatHistory.push({ role: 'user', parts: [{ text: query }] });
       this.plugin.chatHistory.push({ role: 'model', parts: [{ text: this.messages[this.messages.length - 1].message }] });

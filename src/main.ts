@@ -75,4 +75,3 @@ export default class AIPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 }
-

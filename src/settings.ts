@@ -5,6 +5,7 @@ import { AIView, PromptModal } from './ui';
 export interface AIPluginSettings {
   apiKey: string;
   selectedModel: string;
+  generationStreaming: boolean;
   maxContextLength: number;
   documentNum: number;
   conversationHeight: number;
@@ -22,6 +23,7 @@ export interface AIPluginSettings {
 export const DEFAULT_SETTINGS: AIPluginSettings = {
   apiKey: '',
   selectedModel: 'gemini-1.5-flash-latest',
+  generationStreaming: false,
   maxContextLength: 4000,
   documentNum: 5,
   conversationHeight: 400,
@@ -80,6 +82,15 @@ export class AIPluginSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+      new Setting(containerEl)
+            .setName('Live Streaming')
+            .setDesc('텍스트 생성 과정을 실시간으로 볼 수 있습니다.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.generationStreaming)
+                .onChange(async (value) => {
+                    this.plugin.settings.generationStreaming = value;
+                    await this.plugin.saveSettings();
+                }));
 
     new Setting(containerEl)
       .setName('Max Context Length')
