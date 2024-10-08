@@ -1,8 +1,7 @@
-import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent, TextAreaComponent, FuzzySuggestModal } from 'obsidian';
+import { TFile, WorkspaceLeaf, ItemView, MarkdownRenderer, MarkdownView, Notice, App, Modal, TextComponent, TextAreaComponent } from 'obsidian';
 import { getRelevantDocuments, getRelevantDocumentsByTopChunks, truncateContext } from './nlp';
 import { generateAIContent, generateAIContentStream } from './ai';
 import AIPlugin from './main';
-import * as diff from 'diff';
 
 const AI_VIEW_TYPE = 'Chat via Vault';
 
@@ -133,7 +132,9 @@ export class AIView extends ItemView {
       askButton.disabled = true;
       let context = "";
       if (this.plugin.settings.chunkEnabled==false) {
+        console.time("getRelevantDocuments");
         context = await getRelevantDocuments(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile, this.plugin.settings.searchalgorithm);
+        console.timeEnd("getRelevantDocuments");
       } else {
         context = await getRelevantDocumentsByTopChunks(query, this.plugin.app, this.plugin.settings.documentNum, this.lastOpenedFile, this.plugin.settings.chunkNum, this.plugin.settings.searchalgorithm);
 
@@ -156,9 +157,10 @@ export class AIView extends ItemView {
         });
       } else if (this.plugin.settings.generationStreaming==false){
         const lastMessageIndex = this.messages.length - 1;
-        this.messages[lastMessageIndex].message = "답변 중..."; // "답변 중..."을 빈 문자열로 교체
+        this.messages[lastMessageIndex].message = "답변 중...";
+        updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
         const response = await generateAIContent(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt,);
-        this.messages[lastMessageIndex].message = response!;
+        this.messages[lastMessageIndex].message = response;
         updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
       }
       this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
