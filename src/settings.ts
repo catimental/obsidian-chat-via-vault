@@ -22,7 +22,7 @@ export interface AIPluginSettings {
 
 export const DEFAULT_SETTINGS: AIPluginSettings = {
   apiKey: '',
-  selectedModel: 'gemini-1.5-flash-latest',
+  selectedModel: 'gemini-2.0-flash-exp',
   generationStreaming: false,
   maxContextLength: 4000,
   documentNum: 5,
@@ -72,9 +72,10 @@ export class AIPluginSettingTab extends PluginSettingTab {
       .addDropdown((dropdown) =>
         dropdown
           .addOptions({
-            "gemini-1.5-flash-exp-0827": "gemini-1.5-flash-exp-0827",
+            "gemini-1.5-flash-8b": "gemini-1.5-flash-exp-0827",
             "gemini-1.5-flash": "gemini-1.5-flash-latest",
             "gemini-1.5-pro": "gemini-1.5-pro-latest",
+            "gemini-2.0-flash-exp": "gemini-2.0-flash-exp"
           })
           .setValue(this.plugin.settings.selectedModel)
           .onChange(async (value) => {
