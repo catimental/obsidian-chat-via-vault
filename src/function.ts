@@ -11,7 +11,7 @@ export async function continueWriting(
   const context = editor.getRange({ line: 0, ch: 0 }, cursor); // 현재 커서 이전의 텍스트를 가져옴
   console.log(context)
 
-  const apiKey = settings.apiKey;
+  const apiKey = settings.geminiApiKey;
   const model = settings.selectedModel;
 
   if (!apiKey) {
@@ -43,7 +43,7 @@ export async function continueWriting(
 // Mermaid 플로차트 코드 생성 함수
 export async function generateMermaidFlowchart(docContent: string, input: string, settings: AIPluginSettings, chatHistory: Array<{ role: string; parts: Array<{ text: string }> }>): Promise<string> {
     // AI에게 현재 문서 내용과 사용자가 입력한 플로차트 노드 전달
-    const apiKey = settings.apiKey;
+    const apiKey = settings.geminiApiKey;
     const model = settings.selectedModel;
   
     if (!apiKey) {

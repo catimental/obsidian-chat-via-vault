@@ -145,7 +145,7 @@ export class AIView extends ItemView {
   
       // AI 응답을 실시간 스트리밍으로 받기
       if (this.plugin.settings.generationStreaming==true) {
-        await generateAIContentStream(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt, (chunkText) => {
+        await generateAIContentStream(query, context, this.plugin.settings.geminiApiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt, (chunkText) => {
             const lastMessageIndex = this.messages.length - 1;
             if (this.messages[lastMessageIndex].message === "문서 검색 중...") {
                 this.messages[lastMessageIndex].message = ""; // "답변 중..."을 빈 문자열로 교체
@@ -159,7 +159,7 @@ export class AIView extends ItemView {
         const lastMessageIndex = this.messages.length - 1;
         this.messages[lastMessageIndex].message = "답변 중...";
         updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
-        const response = await generateAIContent(query, context, this.plugin.settings.apiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt,);
+        const response = await generateAIContent(query, context, this.plugin.settings.geminiApiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt,);
         this.messages[lastMessageIndex].message = response;
         updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
       }

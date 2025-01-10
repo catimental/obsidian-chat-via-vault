@@ -3,7 +3,9 @@ import AIPlugin from "./main";
 import { AIView, PromptModal } from './ui';
 
 export interface AIPluginSettings {
-  apiKey: string;
+  geminiApiKey: string;
+  openAiApiKey: string;
+  claudeApiKey: string;
   selectedModel: string;
   generationStreaming: boolean;
   maxContextLength: number;
@@ -21,7 +23,9 @@ export interface AIPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: AIPluginSettings = {
-  apiKey: '',
+  geminiApiKey: '',
+  openAiApiKey: '',
+  claudeApiKey: '',
   selectedModel: 'gemini-2.0-flash-exp',
   generationStreaming: false,
   maxContextLength: 4000,
@@ -59,9 +63,9 @@ export class AIPluginSettingTab extends PluginSettingTab {
       .addText((text) =>
         text
           .setPlaceholder('Enter API Key')
-          .setValue(this.plugin.settings.apiKey)
+          .setValue(this.plugin.settings.geminiApiKey)
           .onChange(async (value) => {
-            this.plugin.settings.apiKey = value;
+            this.plugin.settings.geminiApiKey = value;
             await this.plugin.saveSettings();
           })
       );
