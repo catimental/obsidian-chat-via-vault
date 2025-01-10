@@ -21,7 +21,7 @@ Obsidian에서 Google Generative AI(Gemini)를 사용하여 Vault 내의 데이�
 
 ## 사용법
 
-1. Obsidian 상단의 리본 메뉴에서 **AI Assistant** 아이콘을 클릭하여 새 탭을 엽니다.
+1. Obsidian 상단의 리본 메뉴에서 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg> 아이콘을 클릭하여 새 탭을 엽니다.
 2. 새로 열린 탭에서 질문을 입력하고 **Ask** 버튼을 클릭합니다.
 3. AI가 Vault 내의 문서를 분석한 후 적절한 답변을 제공합니다.
 
