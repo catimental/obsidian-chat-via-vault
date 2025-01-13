@@ -36,10 +36,13 @@ export abstract class BaseLLMService {
 	---
 	Please process the following query based on these guidelines.
 	`
+
+
 	constructor(apiKey: string) {
 		this.apiKey = apiKey;
 	}
 
+	//TODO(catimental): rename other name, strange this name
 	protected abstract prepareMessages(
 		context: Context,
 		chatHistory: ChatMessage[]
