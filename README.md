@@ -12,7 +12,7 @@ Obsidian에서 Google Generative AI(Gemini)를 사용하여 Vault 내의 데이�
 
 1. 이 레포지토리를 다운로드하거나 복제합니다.
 2. Obsidian의 플러그인 폴더(`.obsidian/plugins/`)에 다운로드한 플러그인 폴더를 추가합니다.
-3. 플러그인 설정 화면에서 **Vault Chat** 플러그인을 활성화합니다.
+3. 플러그인 설정 화면에서 **Chat via Vault** 플러그인을 활성화합니다.
 
 ## 설정
 1. 플러그인을 활성화한 후, 설정 탭에서 **Gemini API Key**를 입력합니다.
@@ -20,8 +20,9 @@ Obsidian에서 Google Generative AI(Gemini)를 사용하여 Vault 내의 데이�
 2. 설정을 저장합니다.
 
 ## 사용법
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
 
-1. Obsidian 상단의 리본 메뉴에서 **AI Assistant** 아이콘을 클릭하여 새 탭을 엽니다.
+1. Obsidian 상단의 리본 메뉴에서  아이콘을 클릭하여 새 탭을 엽니다.
 2. 새로 열린 탭에서 질문을 입력하고 **Ask** 버튼을 클릭합니다.
 3. AI가 Vault 내의 문서를 분석한 후 적절한 답변을 제공합니다.
 
