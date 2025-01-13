@@ -50,7 +50,6 @@ export default class AIPlugin extends Plugin {
       }
     }));
 
-
   }
 
 

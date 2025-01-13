@@ -142,10 +142,13 @@ export class AIView extends ItemView {
 
       context = `::: Selected Text :::\n${this.selectedText}\n` + context;
       context = truncateContext(context, this.plugin.settings.maxContextLength);
-  
+
+		const llmSettings = this.plugin.settings.platformSettings[this.plugin.settings.selectedPlatform];
+		const apiKey = llmSettings.apiKey;
+		const model = llmSettings.selectedModel;
       // AI 응답을 실시간 스트리밍으로 받기
       if (this.plugin.settings.generationStreaming==true) {
-        await generateAIContentStream(query, context, this.plugin.settings.geminiApiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt, (chunkText) => {
+        await generateAIContentStream(query, context, apiKey, model, this.plugin.chatHistory, this.plugin.settings.selectedPrompt, (chunkText) => {
             const lastMessageIndex = this.messages.length - 1;
             if (this.messages[lastMessageIndex].message === "문서 검색 중...") {
                 this.messages[lastMessageIndex].message = ""; // "답변 중..."을 빈 문자열로 교체
@@ -159,7 +162,7 @@ export class AIView extends ItemView {
         const lastMessageIndex = this.messages.length - 1;
         this.messages[lastMessageIndex].message = "답변 중...";
         updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
-        const response = await generateAIContent(query, context, this.plugin.settings.geminiApiKey, this.plugin.settings.selectedModel, this.plugin.chatHistory, this.plugin.settings.selectedPrompt,);
+        const response = await generateAIContent(query, context, apiKey, model, this.plugin.chatHistory, this.plugin.settings.selectedPrompt,);
         this.messages[lastMessageIndex].message = response;
         updateMessageContent(aiMessageElement, this.messages[lastMessageIndex].message);
       }
@@ -167,7 +170,7 @@ export class AIView extends ItemView {
   
       this.plugin.chatHistory.push({ role: 'user', parts: [{ text: query }] });
       this.plugin.chatHistory.push({ role: 'model', parts: [{ text: this.messages[this.messages.length - 1].message }] });
-  
+	console.log(`chatHistory: ${this.plugin.chatHistory.map((message) => message.parts.map(part => part.text).join('')).join('\r\n')}`);
       askButton.disabled = false;
       askButton.innerText = 'Ask';
       

@@ -1,12 +1,20 @@
 import { PluginSettingTab, Setting, App } from 'obsidian';
 import AIPlugin from "./main";
 import { AIView, PromptModal } from './ui';
+import {getPlatformInfo, getPlatformModels, LLM_PLATFORMS, LLMPlatform} from "./constants/llm";
 
+
+export interface PlatformSettings {
+    apiKey: string;
+    selectedModel: string;
+}
 export interface AIPluginSettings {
-  geminiApiKey: string;
-  openAiApiKey: string;
-  claudeApiKey: string;
-  selectedModel: string;
+  // geminiApiKey: string;
+  // openAiApiKey: string;
+  // claudeApiKey: string;
+  // selectedModel: string;
+  selectedPlatform: LLMPlatform;
+  platformSettings: { [key: string]: PlatformSettings };
   generationStreaming: boolean;
   maxContextLength: number;
   documentNum: number;
@@ -23,10 +31,17 @@ export interface AIPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: AIPluginSettings = {
-  geminiApiKey: '',
-  openAiApiKey: '',
-  claudeApiKey: '',
-  selectedModel: 'gemini-2.0-flash-exp',
+  selectedPlatform: LLM_PLATFORMS[0].id,
+  platformSettings: {
+      gemini: {
+		  apiKey: '',
+		  selectedModel: getPlatformInfo('gemini').models[0].id
+	  },
+      openAI: {
+            apiKey: '',
+            selectedModel: getPlatformInfo('openAI').models[0].id
+      }
+  },
   generationStreaming: false,
   maxContextLength: 4000,
   documentNum: 5,
@@ -58,35 +73,68 @@ export class AIPluginSettingTab extends PluginSettingTab {
     containerEl.createEl('h2', { text: 'Chat via Vault Plugin Settings' });
 
     new Setting(containerEl)
-      .setName('Gemini API Key')
-      .setDesc('Gemini API 키를 입력하세요.')
-      .addText((text) =>
-        text
-          .setPlaceholder('Enter API Key')
-          .setValue(this.plugin.settings.geminiApiKey)
-          .onChange(async (value) => {
-            this.plugin.settings.geminiApiKey = value;
-            await this.plugin.saveSettings();
-          })
-      );
+        .setName('LLM Platform')
+        .setDesc('사용할 LLM 플랫폼을 선택하세요.')
+        .addDropdown(dropdown => {
+            // 플랫폼 목록을 상수에서 가져와 동적으로 생성
+            const platformOptions = LLM_PLATFORMS.reduce((acc, platform) => {
+                acc[platform.id] = platform.name;
+                return acc;
+            }, {} as { [key: string]: string });
 
-    new Setting(containerEl)
-      .setName('Model')
-      .setDesc('사용할 모델을 선택하세요.')
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOptions({
-            "gemini-1.5-flash-8b": "gemini-1.5-flash-exp-0827",
-            "gemini-1.5-flash": "gemini-1.5-flash-latest",
-            "gemini-1.5-pro": "gemini-1.5-pro-latest",
-            "gemini-2.0-flash-exp": "gemini-2.0-flash-exp"
-          })
-          .setValue(this.plugin.settings.selectedModel)
-          .onChange(async (value) => {
-            this.plugin.settings.selectedModel = value;
-            await this.plugin.saveSettings();
-          })
-      );
+            dropdown
+                .addOptions(platformOptions)
+                .setValue(this.plugin.settings.selectedPlatform)
+                .onChange(async (value) => {
+                    console.log(`Selected platform: ${value}`);
+                    this.plugin.settings.selectedPlatform = value as LLMPlatform;
+                    await this.plugin.saveSettings();
+                    this.display();
+                });
+        });
+
+    const currentPlatform = LLM_PLATFORMS.find(platform => platform.id === this.plugin.settings.selectedPlatform);
+
+    if(currentPlatform) {
+        if(!this.plugin.settings.platformSettings[currentPlatform.id]) {
+            this.plugin.settings.platformSettings[currentPlatform.id] = {
+                apiKey: '',
+                selectedModel: currentPlatform.models[0].id
+            };
+        }
+        const platformSetting = this.plugin.settings.platformSettings[currentPlatform.id];
+
+        //api key
+        new Setting(containerEl)
+            .setName(currentPlatform.apiKeyName)
+            .setDesc("API 키를 입력하세요")
+            .addText(text => text
+                .setPlaceholder('Enter API Key')
+                .setValue(platformSetting.apiKey || '')
+                .onChange(async (value) => {
+                    this.plugin.settings.platformSettings[currentPlatform.id].apiKey = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        // models
+        new Setting(containerEl)
+            .setName("모델")
+            .setDesc("사용할 모델을 선택하세요.")
+            .addDropdown(dropdown => {
+                const models = getPlatformModels(currentPlatform.id);
+                dropdown
+                    .addOptions(models.reduce((acc, model) => {
+                        acc[model.id] = model.name;
+                        return acc;
+                    }, {} as { [key: string]: string }))
+                    .setValue(this.plugin.settings.platformSettings[currentPlatform.id].selectedModel)
+                    .onChange(async (value) => {
+                        this.plugin.settings.platformSettings[currentPlatform.id].selectedModel = value as string;
+                        await this.plugin.saveSettings();
+                    });
+            })
+    }
       new Setting(containerEl)
             .setName('Live Streaming')
             .setDesc('텍스트 생성 과정을 실시간으로 볼 수 있습니다.')
